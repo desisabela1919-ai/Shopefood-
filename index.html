@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tracker Target ShopeeFood 1.2 Juta</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar-free active area */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col pb-24">
+
+    <!-- Navbar / Header -->
+    <header class="bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="bg-white text-orange-600 p-2 rounded-xl shadow-inner flex items-center justify-center w-10 h-10 animate-bounce">
+                    <i class="fa-solid fa-motorcycle text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-black tracking-tight uppercase">SHOPEEFOOD TRACKER</h1>
+                    <p class="text-[10px] text-orange-100 font-bold">Periode: 15 - 31 Juli 2026</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="btn-reset" class="text-[10px] bg-orange-700/40 hover:bg-orange-700/70 px-2.5 py-1.5 rounded-lg border border-orange-400/20 transition flex items-center gap-1 font-extrabold uppercase">
+                    <i class="fa-solid fa-rotate"></i> Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-4 space-y-4 flex-grow w-full">
+        
+        <!-- Dashboard Progress Card -->
+        <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -mr-10 -mt-10"></div>
+            
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tabungan Bersih Terkumpul</span>
+                    <h2 class="text-3xl font-black text-slate-900 mt-0.5" id="total-saved">Rp 0</h2>
+                </div>
+                <div class="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl font-black text-xs" id="progress-percent">
+                    0%
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-4">
+                <div id="progress-bar" class="bg-gradient-to-r from-orange-500 to-red-500 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+
+            <!-- Mini stats grid -->
+            <div class="grid grid-cols-2 gap-3 pt-3.5 border-t border-slate-100">
+                <div>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Sisa Target</span>
+                    <p class="text-sm font-black text-red-600" id="remaining-target">Rp 1.200.000</p>
+                </div>
+                <div>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Rekomendasi Besok</span>
+                    <p class="text-sm font-black text-emerald-600" id="avg-daily-needed">Rp 71.000 /Hari</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Odometer & Distance Analytics Card -->
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex items-center gap-3">
+                <div class="bg-blue-50 text-blue-600 p-2.5 rounded-xl text-lg flex items-center justify-center">
+                    <i class="fa-solid fa-road"></i>
+                </div>
+                <div>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Jarak</span>
+                    <span class="text-sm font-black text-slate-800" id="total-distance">0 Km</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex items-center gap-3">
+                <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl text-lg flex items-center justify-center">
+                    <i class="fa-solid fa-gas-pump"></i>
+                </div>
+                <div>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase block">Bensin / Km</span>
+                    <span class="text-sm font-black text-slate-800" id="bensin-per-km">Rp 0 /Km</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Allowance Config (Makan + Bensin) -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <button onclick="toggleAllowanceConfig()" class="w-full flex justify-between items-center text-xs font-bold text-slate-700">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-orange-500 text-sm"></i> Atur Biaya Makan & Bensin Harian
+                </span>
+                <i id="allowance-chevron" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+            </button>
+            <div id="allowance-config" class="hidden mt-4 pt-3 border-t border-slate-100 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] text-slate-500 font-bold mb-1">Uang Makan Harian (Rp)</label>
+                        <input type="number" id="input-makan" value="30000" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 font-bold mb-1">Uang Bensin Harian (Rp)</label>
+                        <input type="number" id="input-bensin" value="10000" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                </div>
+                <button onclick="saveAllowanceConfig()" class="w-full bg-slate-900 text-white py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </div>
+
+        <!-- Shift Strategy Box -->
+        <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 border border-orange-100 space-y-3">
+            <h3 class="text-xs font-black text-orange-950 flex items-center gap-1.5">
+                <i class="fa-solid fa-lightbulb text-orange-500 text-sm animate-pulse"></i> Strategi Shift Sore (17.00 - 23.00)
+            </h3>
+            
+            <div class="space-y-2 text-xs text-orange-900 leading-relaxed">
+                <div class="bg-white/80 p-3 rounded-xl border border-orange-200/50">
+                    <strong class="text-orange-700 block mb-0.5">⏰ Jam 17.00 - 20.00 (Peak Hours)</strong>
+                    Fokus di area padat kuliner. Kejar target minimal 5-6 orderan di jam sibuk makan malam ini.
+                </div>
+                
+                <div class="bg-white/80 p-3 rounded-xl border border-orange-200/50">
+                    <strong class="text-orange-700 block mb-0.5">🌙 Jam 20.00 - 23.00 (Late Shift)</strong>
+                    Argo terendah di jam ini senilai <span class="bg-orange-200 text-orange-800 px-1.5 py-0.5 rounded-md font-extrabold text-[10px]">Rp 6.400</span>.
+                    <div class="mt-2 pt-2 border-t border-orange-100 flex justify-between items-center">
+                        <span>Butuh argo minimum malam ini:</span>
+                        <span class="font-black text-orange-800" id="argo-minimum-calc">Butuh ± 11 Trip</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Spreadsheet Title -->
+        <div class="flex justify-between items-center px-1">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-table text-slate-500"></i> Spreadsheet Narik Harian
+            </h3>
+            <span class="text-[10px] bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-bold">17 Hari Perjuangan</span>
+        </div>
+
+        <!-- Main Spreadsheet/Table Layout -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <!-- Table Header -->
+            <div class="grid grid-cols-12 bg-slate-50 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 py-3.5 px-4 tracking-wider">
+                <div class="col-span-3">Hari</div>
+                <div class="col-span-4 text-right">Kotor (Rp)</div>
+                <div class="col-span-3 text-right">Ditabung</div>
+                <div class="col-span-2 text-right">Detail</div>
+            </div>
+
+            <!-- Table Rows (Dynamically Generated) -->
+            <div id="spreadsheet-rows" class="divide-y divide-slate-100">
+                <!-- Row template inside JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Toast Message (replaces alert) -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-xs font-bold tracking-wider flex items-center gap-2 transition-all transform translate-y-24 opacity-0 z-50">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+        <span id="toast-text">Data tersimpan otomatis!</span>
+    </div>
+
+    <!-- Clear Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-red-50 text-red-600 mb-3">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+                <h4 class="text-base font-black text-slate-950">Reset Semua Data?</h4>
+                <p class="text-xs text-slate-500 mt-1">Semua histori pendapatan dan data odometer harian kamu akan dihapus secara permanen dari HP ini.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeConfirmModal()" class="py-3 rounded-2xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Batal</button>
+                <button onclick="resetData()" class="py-3 rounded-2xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition">Ya, Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Target Info Footer -->
+    <div class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 p-3.5 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] max-w-md mx-auto z-40">
+        <div class="flex justify-between items-center text-[10px]">
+            <span class="text-slate-500 font-semibold">Makan & Bensin Harian: <strong class="text-slate-700" id="bottom-operational-text">Rp 40.000</strong></span>
+            <span class="text-orange-600 font-black flex items-center gap-1 uppercase tracking-wider">
+                <i class="fa-solid fa-cloud-arrow-up animate-pulse"></i> Auto-Save Aktif (HP)
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // Set target total tabungan bersih
+        const TARGET_TABUNGAN_BERSIH = 1200000;
+        
+        // Default Operational Allowances
+        let dailyMakan = 30000;
+        let dailyBensin = 10000;
+        let dailyOperational = dailyMakan + dailyBensin;
+
+        // Data Days dari 15 Juli sampai 31 Juli 2026 (17 Hari)
+        const trackerDays = [
+            { id: 1, dateLabel: "15 Juli", dayName: "Rabu" },
+            { id: 2, dateLabel: "16 Juli", dayName: "Kamis" },
+            { id: 3, dateLabel: "17 Juli", dayName: "Jumat" },
+            { id: 4, dateLabel: "18 Juli", dayName: "Sabtu" },
+            { id: 5, dateLabel: "19 Juli", dayName: "Minggu" },
+            { id: 6, dateLabel: "20 Juli", dayName: "Senin" },
+            { id: 7, dateLabel: "21 Juli", dayName: "Selasa" },
+            { id: 8, dateLabel: "22 Juli", dayName: "Rabu" },
+            { id: 9, dateLabel: "23 Juli", dayName: "Kamis" },
+            { id: 10, dateLabel: "24 Juli", dayName: "Jumat" },
+            { id: 11, dateLabel: "25 Juli", dayName: "Sabtu" },
+            { id: 12, dateLabel: "26 Juli", dayName: "Minggu" },
+            { id: 13, dateLabel: "27 Juli", dayName: "Senin" },
+            { id: 14, dateLabel: "28 Juli", dayName: "Selasa" },
+            { id: 15, dateLabel: "29 Juli", dayName: "Rabu" },
+            { id: 16, dateLabel: "30 Juli", dayName: "Kamis" },
+            { id: 17, dateLabel: "31 Juli", dayName: "Jumat" }
+        ];
+
+        // State holder
+        let userIncomeData = {};
+        let expandedDays = {}; // Holds open/closed state of details
+
+        window.onload = function() {
+            loadSavedConfig();
+            loadUserData();
+            renderSpreadsheet();
+            recalculateMetrics();
+            setupResetButton();
+        }
+
+        // Format Rupiah helper
+        function formatRupiah(value) {
+            if (value === null || value === undefined || isNaN(value)) return "Rp 0";
+            return "Rp " + parseInt(value).toLocaleString('id-ID');
+        }
+
+        // Toggle Settings Accordion
+        function toggleAllowanceConfig() {
+            const container = document.getElementById('allowance-config');
+            const chevron = document.getElementById('allowance-chevron');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            } else {
+                container.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        }
+
+        // Toggle Day Detail Panel (Odometer inputs)
+        function toggleDayDetail(dayId) {
+            const panel = document.getElementById(`details-day-${dayId}`);
+            const icon = document.getElementById(`chevron-day-${dayId}`);
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+                expandedDays[dayId] = true;
+            } else {
+                panel.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+                expandedDays[dayId] = false;
+            }
+        }
+
+        // Load configured Makan & Bensin values
+        function loadSavedConfig() {
+            const savedMakan = localStorage.getItem('sf_daily_makan');
+            const savedBensin = localStorage.getItem('sf_daily_bensin');
+            
+            if (savedMakan !== null) {
+                dailyMakan = parseInt(savedMakan);
+                document.getElementById('input-makan').value = dailyMakan;
+            }
+            if (savedBensin !== null) {
+                dailyBensin = parseInt(savedBensin);
+                document.getElementById('input-bensin').value = dailyBensin;
+            }
+            dailyOperational = dailyMakan + dailyBensin;
+            document.getElementById('bottom-operational-text').innerText = formatRupiah(dailyOperational);
+        }
+
+        // Save Allowance Configuration
+        function saveAllowanceConfig() {
+            const valMakan = parseInt(document.getElementById('input-makan').value) || 0;
+            const valBensin = parseInt(document.getElementById('input-bensin').value) || 0;
+            
+            localStorage.setItem('sf_daily_makan', valMakan);
+            localStorage.setItem('sf_daily_bensin', valBensin);
+            
+            dailyMakan = valMakan;
+            dailyBensin = valBensin;
+            dailyOperational = dailyMakan + dailyBensin;
+            
+            document.getElementById('bottom-operational-text').innerText = formatRupiah(dailyOperational);
+            showToast("Biaya harian diperbarui!");
+            toggleAllowanceConfig();
+            
+            // Re-render & recalculate
+            renderSpreadsheet();
+            recalculateMetrics();
+        }
+
+        // Load target tracker input data from localStorage
+        function loadUserData() {
+            const savedData = localStorage.getItem('sf_income_data');
+            if (savedData) {
+                userIncomeData = JSON.parse(savedData);
+            } else {
+                // Set default empty state
+                trackerDays.forEach(day => {
+                    userIncomeData[day.id] = {
+                        gross: "",
+                        checked: false,
+                        odoStart: "",
+                        odoEnd: ""
+                    };
+                });
+            }
+        }
+
+        // Save Tracker State
+        function saveUserData() {
+            localStorage.setItem('sf_income_data', JSON.stringify(userIncomeData));
+        }
+
+        // Setup Reset Button Event
+        function setupResetButton() {
+            document.getElementById('btn-reset').onclick = function() {
+                document.getElementById('confirm-modal').classList.remove('hidden');
+            };
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        // Reset all data inputs
+        function resetData() {
+            userIncomeData = {};
+            trackerDays.forEach(day => {
+                userIncomeData[day.id] = {
+                    gross: "",
+                    checked: false,
+                    odoStart: "",
+                    odoEnd: ""
+                };
+            });
+            saveUserData();
+            closeConfirmModal();
+            renderSpreadsheet();
+            recalculateMetrics();
+            showToast("Semua data berhasil di-reset!");
+        }
+
+        // Custom Toast system
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = message;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 2000);
+        }
+
+        // Render rows dynamically
+        function renderSpreadsheet() {
+            const container = document.getElementById('spreadsheet-rows');
+            container.innerHTML = '';
+
+            trackerDays.forEach(day => {
+                const dayState = userIncomeData[day.id] || { gross: "", checked: false, odoStart: "", odoEnd: "" };
+                const grossValue = dayState.gross;
+                
+                // Calculate Net Savings (Gross - Operational)
+                let netSavingsValue = 0;
+                let netSavingsText = "Rp 0";
+                
+                if (grossValue !== "") {
+                    netSavingsValue = parseInt(grossValue) - dailyOperational;
+                    if (netSavingsValue < 0) netSavingsValue = 0; 
+                    netSavingsText = formatRupiah(netSavingsValue);
+                }
+
+                // Odometer distance calculation
+                let odoStart = dayState.odoStart !== undefined ? dayState.odoStart : "";
+                let odoEnd = dayState.odoEnd !== undefined ? dayState.odoEnd : "";
+                let distance = 0;
+                if (odoStart !== "" && odoEnd !== "" && parseInt(odoEnd) >= parseInt(odoStart)) {
+                    distance = parseInt(odoEnd) - parseInt(odoStart);
+                }
+
+                const isExpanded = expandedDays[day.id] || false;
+
+                // Create Row element containing main columns and collapsible detailed drawer
+                const row = document.createElement('div');
+                row.className = `flex flex-col py-3 px-4 border-b border-slate-100 transition ${dayState.checked ? 'bg-orange-50/20' : 'hover:bg-slate-50/50'}`;
+                
+                row.innerHTML = `
+                    <div class="grid grid-cols-12 items-center w-full">
+                        <!-- Tanggal & Hari -->
+                        <div class="col-span-3 flex flex-col justify-center" onclick="toggleDayDetail(${day.id})">
+                            <span class="text-xs font-black text-slate-800">${day.dateLabel}</span>
+                            <span class="text-[9px] text-slate-400 font-bold flex items-center gap-1">
+                                ${day.dayName}
+                                <i id="chevron-day-${day.id}" class="fa-solid fa-chevron-down text-[8px] transition-transform ${isExpanded ? 'rotate-180' : ''}"></i>
+                            </span>
+                        </div>
+
+                        <!-- Input Pendapatan Kotor -->
+                        <div class="col-span-4 text-right flex items-center justify-end">
+                            <div class="relative w-full max-w-[105px]">
+                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-extrabold text-slate-400">Rp</span>
+                                <input 
+                                    type="number" 
+                                    placeholder="0" 
+                                    value="${grossValue}" 
+                                    oninput="updateIncome(${day.id}, this.value)"
+                                    class="w-full bg-slate-50/80 border border-slate-200 focus:border-orange-500 focus:bg-white text-right rounded-xl py-1.5 pl-6 pr-2.5 text-xs font-black text-slate-800 outline-none transition duration-150"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Bersih Ditabung (Calculated) -->
+                        <div class="col-span-3 text-right text-xs font-extrabold ${netSavingsValue > 0 ? 'text-slate-800' : 'text-slate-300'}" id="net-day-${day.id}">
+                            ${netSavingsText}
+                        </div>
+
+                        <!-- Checkbox Selesai -->
+                        <div class="col-span-2 flex justify-end items-center">
+                            <button 
+                                onclick="toggleDayChecked(${day.id})" 
+                                class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${dayState.checked ? 'bg-orange-500 border-orange-500 text-white' : 'border-slate-200 text-transparent hover:border-orange-300'}"
+                            >
+                                <i class="fa-solid fa-check text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible Odometer Detail Drawer -->
+                    <div id="details-day-${day.id}" class="${isExpanded ? '' : 'hidden'} col-span-12 bg-slate-50 p-3.5 rounded-2xl mt-3 border border-slate-100 space-y-3.5">
+                        <div class="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
+                            <span class="text-[10px] font-black text-slate-700 uppercase flex items-center gap-1.5">
+                                <i class="fa-solid fa-road text-slate-400"></i> Catat Jarak Tempuh
+                            </span>
+                            <span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md" id="calc-dist-day-${day.id}">
+                                ${distance} Km Terpakai
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[9px] text-slate-400 font-extrabold uppercase mb-1">Odo Awal (Km)</label>
+                                <input 
+                                    type="number" 
+                                    placeholder="Mulai, ex: 12540" 
+                                    value="${odoStart}" 
+                                    oninput="updateOdometer(${day.id}, 'start', this.value)"
+                                    class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-slate-400 font-extrabold uppercase mb-1">Odo Akhir (Km)</label>
+                                <input 
+                                    type="number" 
+                                    placeholder="Selesai, ex: 12595" 
+                                    value="${odoEnd}" 
+                                    oninput="updateOdometer(${day.id}, 'end', this.value)"
+                                    class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(row);
+            });
+        }
+
+        // Update Income state on input change
+        function updateIncome(dayId, val) {
+            userIncomeData[dayId].gross = val !== "" ? parseInt(val) : "";
+            
+            // Auto check row if there's any income
+            if (val !== "" && parseInt(val) > 0) {
+                userIncomeData[dayId].checked = true;
+            } else {
+                userIncomeData[dayId].checked = false;
+            }
+            
+            saveUserData();
+            
+            // Live update the single row's net value first for smoother UI response
+            const netLabel = document.getElementById(`net-day-${dayId}`);
+            let netVal = 0;
+            if (val !== "") {
+                netVal = parseInt(val) - dailyOperational;
+                if (netVal < 0) netVal = 0;
+                netLabel.innerText = formatRupiah(netVal);
+                netLabel.classList.add('text-slate-800');
+                netLabel.classList.remove('text-slate-300');
+            } else {
+                netLabel.innerText = "Rp 0";
+                netLabel.classList.remove('text-slate-800');
+                netLabel.classList.add('text-slate-300');
+            }
+
+            // Sync structural elements
+            renderSpreadsheet();
+            
+            // Recalculate global targets
+            recalculateMetrics();
+        }
+
+        // Update Odometer values
+        function updateOdometer(dayId, type, val) {
+            const intVal = val !== "" ? parseInt(val) : "";
+            if (type === 'start') {
+                userIncomeData[dayId].odoStart = intVal;
+            } else {
+                userIncomeData[dayId].odoEnd = intVal;
+            }
+            
+            saveUserData();
+            
+            // Live update distance label inside the panel
+            const dayState = userIncomeData[dayId];
+            let dist = 0;
+            if (dayState.odoStart !== "" && dayState.odoEnd !== "" && parseInt(dayState.odoEnd) >= parseInt(dayState.odoStart)) {
+                dist = parseInt(dayState.odoEnd) - parseInt(dayState.odoStart);
+            }
+            
+            const distLabel = document.getElementById(`calc-dist-day-${dayId}`);
+            if (distLabel) {
+                distLabel.innerText = `${dist} Km Terpakai`;
+            }
+
+            recalculateMetrics();
+        }
+
+        // Toggle Row Checkmark
+        function toggleDayChecked(dayId) {
+            userIncomeData[dayId].checked = !userIncomeData[dayId].checked;
+            saveUserData();
+            renderSpreadsheet();
+            recalculateMetrics();
+        }
+
+        // Calculate dynamic values for Dashboard
+        function recalculateMetrics() {
+            let totalSaved = 0;
+            let activeDaysCount = 0; 
+            let uncheckedDaysCount = 0; 
+            let totalDistance = 0;
+            let daysWithOdo = 0;
+
+            trackerDays.forEach(day => {
+                const dayState = userIncomeData[day.id] || { gross: "", checked: false, odoStart: "", odoEnd: "" };
+                
+                // Income Math
+                if (dayState.gross !== "") {
+                    let net = parseInt(dayState.gross) - dailyOperational;
+                    if (net > 0) {
+                        totalSaved += net;
+                    }
+                }
+                
+                if (dayState.gross === "" || dayState.gross === 0) {
+                    uncheckedDaysCount++;
+                } else {
+                    activeDaysCount++;
+                }
+
+                // Odometer Math
+                let oStart = dayState.odoStart;
+                let oEnd = dayState.odoEnd;
+                if (oStart !== "" && oEnd !== "" && parseInt(oEnd) >= parseInt(oStart)) {
+                    totalDistance += (parseInt(oEnd) - parseInt(oStart));
+                    daysWithOdo++;
+                }
+            });
+
+            // Sisa target tabungan
+            let remaining = TARGET_TABUNGAN_BERSIH - totalSaved;
+            if (remaining < 0) remaining = 0;
+
+            // Percentage
+            let percent = (totalSaved / TARGET_TABUNGAN_BERSIH) * 100;
+            if (percent > 100) percent = 100;
+
+            // Recalculate average daily net needed for remaining days
+            let dailyNetNeeded = 0;
+            let finalUncheckedCount = uncheckedDaysCount === 0 ? 1 : uncheckedDaysCount; 
+            
+            if (remaining > 0) {
+                dailyNetNeeded = Math.ceil(remaining / finalUncheckedCount);
+            }
+
+            // Calculate daily gross target recommendation
+            let dailyGrossRecommended = dailyNetNeeded > 0 ? (dailyNetNeeded + dailyOperational) : 0;
+
+            // Update DOM Elements
+            document.getElementById('total-saved').innerText = formatRupiah(totalSaved);
+            document.getElementById('progress-percent').innerText = `${percent.toFixed(0)}%`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('remaining-target').innerText = formatRupiah(remaining);
+            
+            if (dailyGrossRecommended > 0) {
+                document.getElementById('avg-daily-needed').innerText = `${formatRupiah(dailyGrossRecommended)} /Hari`;
+                document.getElementById('avg-daily-needed').className = "text-sm font-black text-orange-600";
+            } else {
+                document.getElementById('avg-daily-needed').innerText = "Target Tercapai! 🎉";
+                document.getElementById('avg-daily-needed').className = "text-sm font-black text-emerald-600";
+            }
+
+            // Update Distance Metrics
+            document.getElementById('total-distance').innerText = `${totalDistance} Km`;
+            
+            // Calculate Bensin cost / Km
+            // Total Bensin = days with odometer entered * dailyBensin
+            if (totalDistance > 0) {
+                let totalBensinSpent = daysWithOdo * dailyBensin;
+                let costPerKm = Math.round(totalBensinSpent / totalDistance);
+                document.getElementById('bensin-per-km').innerText = `Rp ${costPerKm} /Km`;
+            } else {
+                document.getElementById('bensin-per-km').innerText = "Rp 0 /Km";
+            }
+
+            // Update Late Argo Calculator recommendation
+            let lateShiftTarget = Math.ceil(dailyGrossRecommended * 0.5);
+            let argoMinimum = 6400;
+            let tripsNeeded = Math.ceil(lateShiftTarget / argoMinimum);
+            
+            if (tripsNeeded <= 0) tripsNeeded = 0;
+            
+            if (tripsNeeded > 0) {
+                document.getElementById('argo-minimum-calc').innerText = `Butuh ± ${tripsNeeded} Trip (Rp ${lateShiftTarget.toLocaleString('id-ID')})`;
+            } else {
+                document.getElementById('argo-minimum-calc').innerText = `Selesai! ✨`;
+            }
+        }
+    </script>
+</body>
+</html>
