@@ -16,7 +16,6 @@
             background-color: #f8fafc;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Custom scrollbar-free active area */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -24,20 +23,39 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        /* Custom animation for live GPS signal pulse */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.35); opacity: 1; }
+            80%, 100% { transform: scale(1.5); opacity: 0; }
+        }
+        .gps-pulse {
+            position: relative;
+        }
+        .gps-pulse::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: -8px;
+            right: -8px;
+            bottom: -8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col pb-24">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col pb-28">
 
     <!-- Navbar / Header -->
     <header class="bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
-                <div class="bg-white text-orange-600 p-2 rounded-xl shadow-inner flex items-center justify-center w-10 h-10 animate-bounce">
-                    <i class="fa-solid fa-motorcycle text-xl"></i>
+                <div class="bg-white text-orange-600 p-2 rounded-xl shadow-inner flex items-center justify-center w-10 h-10">
+                    <i class="fa-solid fa-motorcycle text-xl animate-bounce"></i>
                 </div>
                 <div>
-                    <h1 class="text-sm font-black tracking-tight uppercase">SHOPEEFOOD TRACKER</h1>
-                    <p class="text-[10px] text-orange-100 font-bold">Periode: 15 - 31 Juli 2026</p>
+                    <h1 class="text-xs font-black tracking-tight uppercase">SHOPEEFOOD TRACKER + GPS</h1>
+                    <p class="text-[9px] text-orange-100 font-bold">Periode: 15 - 31 Juli 2026</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -50,6 +68,43 @@
 
     <main class="max-w-md mx-auto px-4 py-4 space-y-4 flex-grow w-full">
         
+        <!-- Live GPS Tracker Panel -->
+        <div id="gps-card" class="bg-slate-900 text-white rounded-3xl p-5 shadow-xl border border-slate-800 relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full -mr-10 -mt-10"></div>
+            
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <span id="gps-badge-icon" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                    <span id="gps-status" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">GPS Tidak Aktif</span>
+                </div>
+                <span id="gps-accuracy" class="text-[9px] font-bold text-slate-500">Akurasi: -</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <div>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Jarak Tempuh Hari Ini</span>
+                    <h3 class="text-3xl font-black text-orange-400" id="gps-distance">0.00 <span class="text-xs text-white">Km</span></h3>
+                </div>
+                <div class="text-right">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kecepatan Saat Ini</span>
+                    <h3 class="text-3xl font-black text-slate-200" id="gps-speed">0 <span class="text-xs">Km/h</span></h3>
+                </div>
+            </div>
+
+            <!-- Action GPS Buttons -->
+            <div class="grid grid-cols-2 gap-3">
+                <button id="btn-gps-toggle" onclick="toggleGpsTracking()" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/20">
+                    <i class="fa-solid fa-play"></i> Mulai GPS
+                </button>
+                <button id="btn-gps-save" onclick="saveGpsDistance()" disabled class="w-full bg-slate-800 text-slate-600 cursor-not-allowed py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Simpan Jarak
+                </button>
+            </div>
+            <p class="text-[9px] text-slate-400 text-center mt-3 leading-tight">
+                *Aktifkan GPS saat jam 17.00 & matikan jam 23.00. Jarak tempuh otomatis terisi di hari yang sedang berjalan.
+            </p>
+        </div>
+
         <!-- Dashboard Progress Card -->
         <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 relative overflow-hidden">
             <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -mr-10 -mt-10"></div>
@@ -76,7 +131,7 @@
                     <p class="text-sm font-black text-red-600" id="remaining-target">Rp 1.200.000</p>
                 </div>
                 <div>
-                    <span class="text-[9px] font-bold text-slate-400 uppercase">Rekomendasi Besok</span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Rekomendasi Hari Esok</span>
                     <p class="text-sm font-black text-emerald-600" id="avg-daily-needed">Rp 71.000 /Hari</p>
                 </div>
             </div>
@@ -85,7 +140,7 @@
         <!-- Odometer & Distance Analytics Card -->
         <div class="grid grid-cols-2 gap-3">
             <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex items-center gap-3">
-                <div class="bg-blue-50 text-blue-600 p-2.5 rounded-xl text-lg flex items-center justify-center">
+                <div class="bg-blue-50 text-blue-600 p-2.5 rounded-xl text-lg flex items-center justify-center w-10 h-10">
                     <i class="fa-solid fa-road"></i>
                 </div>
                 <div>
@@ -94,7 +149,7 @@
                 </div>
             </div>
             <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex items-center gap-3">
-                <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl text-lg flex items-center justify-center">
+                <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl text-lg flex items-center justify-center w-10 h-10">
                     <i class="fa-solid fa-gas-pump"></i>
                 </div>
                 <div>
@@ -222,28 +277,35 @@
 
         // Data Days dari 15 Juli sampai 31 Juli 2026 (17 Hari)
         const trackerDays = [
-            { id: 1, dateLabel: "15 Juli", dayName: "Rabu" },
-            { id: 2, dateLabel: "16 Juli", dayName: "Kamis" },
-            { id: 3, dateLabel: "17 Juli", dayName: "Jumat" },
-            { id: 4, dateLabel: "18 Juli", dayName: "Sabtu" },
-            { id: 5, dateLabel: "19 Juli", dayName: "Minggu" },
-            { id: 6, dateLabel: "20 Juli", dayName: "Senin" },
-            { id: 7, dateLabel: "21 Juli", dayName: "Selasa" },
-            { id: 8, dateLabel: "22 Juli", dayName: "Rabu" },
-            { id: 9, dateLabel: "23 Juli", dayName: "Kamis" },
-            { id: 10, dateLabel: "24 Juli", dayName: "Jumat" },
-            { id: 11, dateLabel: "25 Juli", dayName: "Sabtu" },
-            { id: 12, dateLabel: "26 Juli", dayName: "Minggu" },
-            { id: 13, dateLabel: "27 Juli", dayName: "Senin" },
-            { id: 14, dateLabel: "28 Juli", dayName: "Selasa" },
-            { id: 15, dateLabel: "29 Juli", dayName: "Rabu" },
-            { id: 16, dateLabel: "30 Juli", dayName: "Kamis" },
-            { id: 17, dateLabel: "31 Juli", dayName: "Jumat" }
+            { id: 1, dateLabel: "15 Juli", dayName: "Rabu", formattedDate: "2026-07-15" },
+            { id: 2, dateLabel: "16 Juli", dayName: "Kamis", formattedDate: "2026-07-16" },
+            { id: 3, dateLabel: "17 Juli", dayName: "Jumat", formattedDate: "2026-07-17" },
+            { id: 4, dateLabel: "18 Juli", dayName: "Sabtu", formattedDate: "2026-07-18" },
+            { id: 5, dateLabel: "19 Juli", dayName: "Minggu", formattedDate: "2026-07-19" },
+            { id: 6, dateLabel: "20 Juli", dayName: "Senin", formattedDate: "2026-07-20" },
+            { id: 7, dateLabel: "21 Juli", dayName: "Selasa", formattedDate: "2026-07-21" },
+            { id: 8, dateLabel: "22 Juli", dayName: "Rabu", formattedDate: "2026-07-22" },
+            { id: 9, dateLabel: "23 Juli", dayName: "Kamis", formattedDate: "2026-07-23" },
+            { id: 10, dateLabel: "24 Juli", dayName: "Jumat", formattedDate: "2026-07-24" },
+            { id: 11, dateLabel: "25 Juli", dayName: "Sabtu", formattedDate: "2026-07-25" },
+            { id: 12, dateLabel: "26 Juli", dayName: "Minggu", formattedDate: "2026-07-26" },
+            { id: 13, dateLabel: "27 Juli", dayName: "Senin", formattedDate: "2026-07-27" },
+            { id: 14, dateLabel: "28 Juli", dayName: "Selasa", formattedDate: "2026-07-28" },
+            { id: 15, dateLabel: "29 Juli", dayName: "Rabu", formattedDate: "2026-07-29" },
+            { id: 16, dateLabel: "30 Juli", dayName: "Kamis", formattedDate: "2026-07-30" },
+            { id: 17, dateLabel: "31 Juli", dayName: "Jumat", formattedDate: "2026-07-31" }
         ];
 
         // State holder
         let userIncomeData = {};
-        let expandedDays = {}; // Holds open/closed state of details
+        let expandedDays = {}; 
+
+        // GPS Tracker variables
+        let gpsWatchId = null;
+        let isGpsTracking = false;
+        let gpsAccumulatedDistance = 0.00; // in km
+        let lastLat = null;
+        let lastLon = null;
 
         window.onload = function() {
             loadSavedConfig();
@@ -251,11 +313,12 @@
             renderSpreadsheet();
             recalculateMetrics();
             setupResetButton();
+            resumeGpsSession(); // Auto-restore active GPS tracking on reload
         }
 
         // Format Rupiah helper
         function formatRupiah(value) {
-            if (value === null || value === undefined || isNaN(value)) return "Rp 0";
+            if (value === null || value === undefined || isNaN(value) || value === "") return "Rp 0";
             return "Rp " + parseInt(value).toLocaleString('id-ID');
         }
 
@@ -272,7 +335,7 @@
             }
         }
 
-        // Toggle Day Detail Panel (Odometer inputs)
+        // Toggle Day Detail Panel (GPS Manual Odometer)
         function toggleDayDetail(dayId) {
             const panel = document.getElementById(`details-day-${dayId}`);
             const icon = document.getElementById(`chevron-day-${dayId}`);
@@ -320,7 +383,6 @@
             showToast("Biaya harian diperbarui!");
             toggleAllowanceConfig();
             
-            // Re-render & recalculate
             renderSpreadsheet();
             recalculateMetrics();
         }
@@ -330,14 +392,20 @@
             const savedData = localStorage.getItem('sf_income_data');
             if (savedData) {
                 userIncomeData = JSON.parse(savedData);
+                // Ensure legacy items have distance key
+                trackerDays.forEach(day => {
+                    if (!userIncomeData[day.id]) {
+                        userIncomeData[day.id] = { gross: "", checked: false, distance: 0 };
+                    } else if (userIncomeData[day.id].distance === undefined) {
+                        userIncomeData[day.id].distance = 0;
+                    }
+                });
             } else {
-                // Set default empty state
                 trackerDays.forEach(day => {
                     userIncomeData[day.id] = {
                         gross: "",
                         checked: false,
-                        odoStart: "",
-                        odoEnd: ""
+                        distance: 0
                     };
                 });
             }
@@ -366,8 +434,7 @@
                 userIncomeData[day.id] = {
                     gross: "",
                     checked: false,
-                    odoStart: "",
-                    odoEnd: ""
+                    distance: 0
                 };
             });
             saveUserData();
@@ -387,46 +454,250 @@
             setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-24', 'opacity-0');
-            }, 2000);
+            }, 3000);
+        }
+
+        // Haversine formula to compute distance between two GPS coordinates
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; 
+        }
+
+        // Toggle GPS tracking
+        function toggleGpsTracking() {
+            if (!isGpsTracking) {
+                startGpsTracking();
+            } else {
+                stopGpsTracking();
+            }
+        }
+
+        // Start watching GPS position
+        function startGpsTracking() {
+            if (!navigator.geolocation) {
+                showToast("🔴 Gagal: HP kamu tidak mendukung GPS!");
+                return;
+            }
+
+            const options = {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 10000
+            };
+
+            // Trigger visual button change to yellow and loading state
+            const btn = document.getElementById('btn-gps-toggle');
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Menghubungkan...`;
+            btn.className = "w-full bg-amber-500 text-white py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2";
+
+            gpsWatchId = navigator.geolocation.watchPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const accuracy = position.coords.accuracy; // in meters
+                    const speed = position.coords.speed; // meters per second
+
+                    // Update accuracy UI badge
+                    document.getElementById('gps-accuracy').innerText = `Akurasi GPS: ±${Math.round(accuracy)}m`;
+
+                    // Only update distance if the signal has high accuracy to prevent drifting jumps
+                    if (accuracy < 35) { 
+                        if (lastLat !== null && lastLon !== null) {
+                            const deltaDist = calculateHaversineDistance(lastLat, lastLon, lat, lon);
+                            
+                            // Prevent adding unreasonable huge jumps (such as teleportation on signal reconnect)
+                            if (deltaDist > 0.005 && deltaDist < 1.5) { 
+                                gpsAccumulatedDistance += deltaDist;
+                                document.getElementById('gps-distance').innerHTML = `${gpsAccumulatedDistance.toFixed(2)} <span class="text-xs text-white">Km</span>`;
+                                // Persist state locally in case of sudden app crash / lock screen
+                                localStorage.setItem('sf_gps_distance', gpsAccumulatedDistance.toFixed(4));
+                            }
+                        }
+                        lastLat = lat;
+                        lastLon = lon;
+                        localStorage.setItem('sf_gps_last_lat', lat);
+                        localStorage.setItem('sf_gps_last_lon', lon);
+                    }
+
+                    // Render Speed correctly
+                    let speedKmh = 0;
+                    if (speed && speed > 0.5) {
+                        speedKmh = Math.round(speed * 3.6); // convert m/s to km/h
+                    }
+                    document.getElementById('gps-speed').innerHTML = `${speedKmh} <span class="text-xs">Km/h</span>`;
+
+                    // Finalize UI state as fully tracking
+                    isGpsTracking = true;
+                    localStorage.setItem('sf_gps_active', 'true');
+                    
+                    const badge = document.getElementById('gps-badge-icon');
+                    badge.className = "w-2.5 h-2.5 rounded-full bg-red-500 gps-pulse";
+                    document.getElementById('gps-status').innerText = "🔴 Sedang Melacak Jarak...";
+                    document.getElementById('gps-status').className = "text-[10px] font-black uppercase tracking-wider text-red-500";
+                    
+                    btn.innerHTML = `<i class="fa-solid fa-stop"></i> Berhentikan GPS`;
+                    btn.className = "w-full bg-red-600 hover:bg-red-500 active:scale-95 text-white py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-red-950/20";
+                    
+                    // Enable the Save distance button
+                    const btnSave = document.getElementById('btn-gps-save');
+                    btnSave.disabled = false;
+                    btnSave.className = "w-full bg-orange-500 hover:bg-orange-400 text-white active:scale-95 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-orange-950/20";
+                },
+                function(error) {
+                    let errMsg = "Koneksi GPS bermasalah.";
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errMsg = "Izinkan akses lokasi GPS HP dulu ya!";
+                    }
+                    showToast(`⚠️ GPS Error: ${errMsg}`);
+                    resetGpsUi();
+                },
+                options
+            );
+        }
+
+        // Halt watching current positions
+        function stopGpsTracking() {
+            if (gpsWatchId) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+            }
+            isGpsTracking = false;
+            localStorage.setItem('sf_gps_active', 'false');
+            
+            const btn = document.getElementById('btn-gps-toggle');
+            btn.innerHTML = `<i class="fa-solid fa-play"></i> Mulai GPS`;
+            btn.className = "w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/20";
+            
+            const badge = document.getElementById('gps-badge-icon');
+            badge.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+            document.getElementById('gps-status').innerText = "GPS Dijeda";
+            document.getElementById('gps-status').className = "text-[10px] font-bold uppercase tracking-wider text-slate-400";
+        }
+
+        // Completely clear tracking state
+        function resetGpsUi() {
+            stopGpsTracking();
+            gpsAccumulatedDistance = 0.00;
+            lastLat = null;
+            lastLon = null;
+            localStorage.removeItem('sf_gps_distance');
+            localStorage.removeItem('sf_gps_last_lat');
+            localStorage.removeItem('sf_gps_last_lon');
+            localStorage.removeItem('sf_gps_active');
+            
+            document.getElementById('gps-distance').innerHTML = `0.00 <span class="text-xs text-white">Km</span>`;
+            document.getElementById('gps-speed').innerHTML = `0 <span class="text-xs">Km/h</span>`;
+            document.getElementById('gps-accuracy').innerText = "Akurasi: -";
+
+            const btnSave = document.getElementById('btn-gps-save');
+            btnSave.disabled = true;
+            btnSave.className = "w-full bg-slate-800 text-slate-600 cursor-not-allowed py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2";
+        }
+
+        // Resume active tracking session if page refreshed/closed
+        function resumeGpsSession() {
+            const wasActive = localStorage.getItem('sf_gps_active');
+            const savedDistance = localStorage.getItem('sf_gps_distance');
+            const savedLat = localStorage.getItem('sf_gps_last_lat');
+            const savedLon = localStorage.getItem('sf_gps_last_lon');
+
+            if (savedDistance) {
+                gpsAccumulatedDistance = parseFloat(savedDistance);
+                document.getElementById('gps-distance').innerHTML = `${gpsAccumulatedDistance.toFixed(2)} <span class="text-xs text-white">Km</span>`;
+            }
+            if (savedLat && savedLon) {
+                lastLat = parseFloat(savedLat);
+                lastLon = parseFloat(savedLon);
+            }
+
+            if (wasActive === 'true') {
+                showToast("🔄 Melanjutkan sesi GPS sebelumnya...");
+                startGpsTracking();
+            }
+        }
+
+        // Save the tracked GPS distance to the appropriate day
+        function saveGpsDistance() {
+            if (gpsAccumulatedDistance <= 0) {
+                showToast("⚠️ Jarak GPS masih 0, belum bisa disimpan.");
+                return;
+            }
+
+            // Find matching day in spreadsheet based on today's device date
+            const today = new Date();
+            const localDateStr = today.getFullYear() + '-' + 
+                                 String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                                 String(today.getDate()).padStart(2, '0'); // formats to YYYY-MM-DD
+            
+            // Find matched day in schedules
+            let matchedDay = trackerDays.find(day => day.formattedDate === localDateStr);
+            
+            // Fallback to day 1 (July 15) if testing out of schedule range
+            if (!matchedDay) {
+                matchedDay = trackerDays[0]; 
+            }
+
+            // Write GPS distance to targeted day
+            userIncomeData[matchedDay.id].distance = parseFloat(gpsAccumulatedDistance.toFixed(2));
+            saveUserData();
+            
+            showToast(`✅ Berhasil menyimpan ${gpsAccumulatedDistance.toFixed(2)} Km ke Tanggal ${matchedDay.dateLabel}!`);
+            
+            // Clean tracker session
+            resetGpsUi();
+            
+            // Update table & headers
+            renderSpreadsheet();
+            recalculateMetrics();
         }
 
         // Render rows dynamically
         function renderSpreadsheet() {
             const container = document.getElementById('spreadsheet-rows');
+            
+            // Store current expanded day states before updating DOM to keep drawer layout open
+            trackerDays.forEach(day => {
+                const row = document.getElementById(`row-wrapper-${day.id}`);
+                const detail = document.getElementById(`details-day-${day.id}`);
+                if (detail) {
+                    expandedDays[day.id] = !detail.classList.contains('hidden');
+                }
+            });
+
             container.innerHTML = '';
 
             trackerDays.forEach(day => {
-                const dayState = userIncomeData[day.id] || { gross: "", checked: false, odoStart: "", odoEnd: "" };
+                const dayState = userIncomeData[day.id] || { gross: "", checked: false, distance: 0 };
                 const grossValue = dayState.gross;
                 
                 // Calculate Net Savings (Gross - Operational)
                 let netSavingsValue = 0;
                 let netSavingsText = "Rp 0";
                 
-                if (grossValue !== "") {
+                if (grossValue !== "" && grossValue !== 0) {
                     netSavingsValue = parseInt(grossValue) - dailyOperational;
                     if (netSavingsValue < 0) netSavingsValue = 0; 
                     netSavingsText = formatRupiah(netSavingsValue);
                 }
 
-                // Odometer distance calculation
-                let odoStart = dayState.odoStart !== undefined ? dayState.odoStart : "";
-                let odoEnd = dayState.odoEnd !== undefined ? dayState.odoEnd : "";
-                let distance = 0;
-                if (odoStart !== "" && odoEnd !== "" && parseInt(odoEnd) >= parseInt(odoStart)) {
-                    distance = parseInt(odoEnd) - parseInt(odoStart);
-                }
-
+                let distance = dayState.distance || 0;
                 const isExpanded = expandedDays[day.id] || false;
 
                 // Create Row element containing main columns and collapsible detailed drawer
                 const row = document.createElement('div');
+                row.id = `row-wrapper-${day.id}`;
                 row.className = `flex flex-col py-3 px-4 border-b border-slate-100 transition ${dayState.checked ? 'bg-orange-50/20' : 'hover:bg-slate-50/50'}`;
                 
                 row.innerHTML = `
                     <div class="grid grid-cols-12 items-center w-full">
                         <!-- Tanggal & Hari -->
-                        <div class="col-span-3 flex flex-col justify-center" onclick="toggleDayDetail(${day.id})">
+                        <div class="col-span-3 flex flex-col justify-center cursor-pointer" onclick="toggleDayDetail(${day.id})">
                             <span class="text-xs font-black text-slate-800">${day.dateLabel}</span>
                             <span class="text-[9px] text-slate-400 font-bold flex items-center gap-1">
                                 ${day.dayName}
@@ -434,7 +705,7 @@
                             </span>
                         </div>
 
-                        <!-- Input Pendapatan Kotor -->
+                        <!-- Input Pendapatan Kotor (No-Re-render bug-free input) -->
                         <div class="col-span-4 text-right flex items-center justify-end">
                             <div class="relative w-full max-w-[105px]">
                                 <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-extrabold text-slate-400">Rp</span>
@@ -442,7 +713,7 @@
                                     type="number" 
                                     placeholder="0" 
                                     value="${grossValue}" 
-                                    oninput="updateIncome(${day.id}, this.value)"
+                                    oninput="updateIncomeStateOnly(${day.id}, this.value)"
                                     class="w-full bg-slate-50/80 border border-slate-200 focus:border-orange-500 focus:bg-white text-right rounded-xl py-1.5 pl-6 pr-2.5 text-xs font-black text-slate-800 outline-none transition duration-150"
                                 />
                             </div>
@@ -474,27 +745,16 @@
                                 ${distance} Km Terpakai
                             </span>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[9px] text-slate-400 font-extrabold uppercase mb-1">Odo Awal (Km)</label>
-                                <input 
-                                    type="number" 
-                                    placeholder="Mulai, ex: 12540" 
-                                    value="${odoStart}" 
-                                    oninput="updateOdometer(${day.id}, 'start', this.value)"
-                                    class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                >
-                            </div>
-                            <div>
-                                <label class="block text-[9px] text-slate-400 font-extrabold uppercase mb-1">Odo Akhir (Km)</label>
-                                <input 
-                                    type="number" 
-                                    placeholder="Selesai, ex: 12595" 
-                                    value="${odoEnd}" 
-                                    oninput="updateOdometer(${day.id}, 'end', this.value)"
-                                    class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                >
-                            </div>
+                        <div>
+                            <label class="block text-[9px] text-slate-400 font-extrabold uppercase mb-1">Set Manual Jarak Tempuh (Km)</label>
+                            <input 
+                                type="number" 
+                                step="0.1"
+                                placeholder="ex: 15.4" 
+                                value="${distance || ''}" 
+                                oninput="updateDistanceStateOnly(${day.id}, this.value)"
+                                class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            >
                         </div>
                     </div>
                 `;
@@ -503,12 +763,14 @@
             });
         }
 
-        // Update Income state on input change
-        function updateIncome(dayId, val) {
-            userIncomeData[dayId].gross = val !== "" ? parseInt(val) : "";
+        // FIX: Update income state directly in storage and only change the respective DOM text. 
+        // This stops the whole page list from reloading and closing down the HP software keyboard!
+        function updateIncomeStateOnly(dayId, val) {
+            const intVal = val !== "" ? parseInt(val) : "";
+            userIncomeData[dayId].gross = intVal;
             
-            // Auto check row if there's any income
-            if (val !== "" && parseInt(val) > 0) {
+            // Set checklist based on input
+            if (val !== "" && intVal > 0) {
                 userIncomeData[dayId].checked = true;
             } else {
                 userIncomeData[dayId].checked = false;
@@ -516,49 +778,33 @@
             
             saveUserData();
             
-            // Live update the single row's net value first for smoother UI response
+            // Live-calculate row net savings & update only its specific label text
             const netLabel = document.getElementById(`net-day-${dayId}`);
             let netVal = 0;
             if (val !== "") {
-                netVal = parseInt(val) - dailyOperational;
+                netVal = intVal - dailyOperational;
                 if (netVal < 0) netVal = 0;
                 netLabel.innerText = formatRupiah(netVal);
-                netLabel.classList.add('text-slate-800');
-                netLabel.classList.remove('text-slate-300');
+                netLabel.className = "col-span-3 text-right text-xs font-extrabold text-slate-800";
             } else {
                 netLabel.innerText = "Rp 0";
-                netLabel.classList.remove('text-slate-800');
-                netLabel.classList.add('text-slate-300');
+                netLabel.className = "col-span-3 text-right text-xs font-extrabold text-slate-300";
             }
 
-            // Sync structural elements
-            renderSpreadsheet();
-            
-            // Recalculate global targets
+            // Sync global metric dashboards silently
             recalculateMetrics();
         }
 
-        // Update Odometer values
-        function updateOdometer(dayId, type, val) {
-            const intVal = val !== "" ? parseInt(val) : "";
-            if (type === 'start') {
-                userIncomeData[dayId].odoStart = intVal;
-            } else {
-                userIncomeData[dayId].odoEnd = intVal;
-            }
+        // Update distance manually on input drawer
+        function updateDistanceStateOnly(dayId, val) {
+            const floatVal = val !== "" ? parseFloat(val) : 0;
+            userIncomeData[dayId].distance = floatVal;
             
             saveUserData();
             
-            // Live update distance label inside the panel
-            const dayState = userIncomeData[dayId];
-            let dist = 0;
-            if (dayState.odoStart !== "" && dayState.odoEnd !== "" && parseInt(dayState.odoEnd) >= parseInt(dayState.odoStart)) {
-                dist = parseInt(dayState.odoEnd) - parseInt(dayState.odoStart);
-            }
-            
             const distLabel = document.getElementById(`calc-dist-day-${dayId}`);
             if (distLabel) {
-                distLabel.innerText = `${dist} Km Terpakai`;
+                distLabel.innerText = `${floatVal} Km Terpakai`;
             }
 
             recalculateMetrics();
@@ -578,10 +824,10 @@
             let activeDaysCount = 0; 
             let uncheckedDaysCount = 0; 
             let totalDistance = 0;
-            let daysWithOdo = 0;
+            let daysWithDistance = 0;
 
             trackerDays.forEach(day => {
-                const dayState = userIncomeData[day.id] || { gross: "", checked: false, odoStart: "", odoEnd: "" };
+                const dayState = userIncomeData[day.id] || { gross: "", checked: false, distance: 0 };
                 
                 // Income Math
                 if (dayState.gross !== "") {
@@ -597,20 +843,19 @@
                     activeDaysCount++;
                 }
 
-                // Odometer Math
-                let oStart = dayState.odoStart;
-                let oEnd = dayState.odoEnd;
-                if (oStart !== "" && oEnd !== "" && parseInt(oEnd) >= parseInt(oStart)) {
-                    totalDistance += (parseInt(oEnd) - parseInt(oStart));
-                    daysWithOdo++;
+                // Odometer/GPS Math
+                let distVal = parseFloat(dayState.distance) || 0;
+                if (distVal > 0) {
+                    totalDistance += distVal;
+                    daysWithDistance++;
                 }
             });
 
-            // Sisa target tabungan
+            // Sisa target tabungan bersih
             let remaining = TARGET_TABUNGAN_BERSIH - totalSaved;
             if (remaining < 0) remaining = 0;
 
-            // Percentage
+            // Percentage calculation
             let percent = (totalSaved / TARGET_TABUNGAN_BERSIH) * 100;
             if (percent > 100) percent = 100;
 
@@ -640,12 +885,12 @@
             }
 
             // Update Distance Metrics
-            document.getElementById('total-distance').innerText = `${totalDistance} Km`;
+            document.getElementById('total-distance').innerText = `${totalDistance.toFixed(1)} Km`;
             
             // Calculate Bensin cost / Km
             // Total Bensin = days with odometer entered * dailyBensin
             if (totalDistance > 0) {
-                let totalBensinSpent = daysWithOdo * dailyBensin;
+                let totalBensinSpent = daysWithDistance * dailyBensin;
                 let costPerKm = Math.round(totalBensinSpent / totalDistance);
                 document.getElementById('bensin-per-km').innerText = `Rp ${costPerKm} /Km`;
             } else {
@@ -653,7 +898,7 @@
             }
 
             // Update Late Argo Calculator recommendation
-            let lateShiftTarget = Math.ceil(dailyGrossRecommended * 0.5);
+            let lateShiftTarget = Math.ceil(dailyGrossRecommended * 0.5); // targeting to secure 50% shift on late night
             let argoMinimum = 6400;
             let tripsNeeded = Math.ceil(lateShiftTarget / argoMinimum);
             
